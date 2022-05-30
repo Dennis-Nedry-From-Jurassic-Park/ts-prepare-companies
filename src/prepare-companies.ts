@@ -1,5 +1,6 @@
 import { Share } from "../protos_ts/instruments";
 import clickhouse from "../db/clickhouse"
+import {v4 as uuidv4} from 'uuid';
 
 const table = 'companies_temp_mem_2'
 
@@ -16,7 +17,11 @@ const create_companies_table = `
         name String,
         exchange LowCardinality(String),
         countryOfRisk LowCardinality(String),
-        sector LowCardinality(String)
+        sector LowCardinality(String),
+        tradingStatus UInt8,
+        buyAvailableFlag Bool,
+        sellAvailableFlag Bool,
+        shareType UInt8
     )
     ENGINE = MergeTree()
     partition by tuple ()
@@ -24,8 +29,29 @@ const create_companies_table = `
     SETTINGS index_granularity = 8192
 `;
 
+const fetch_companies_group_by = async(fetch_column:string, column: string) => {
+    clickhouse.sessionId = uuidv4();
+    
+    const req = `
+        SELECT
+        sector,
+        groupArray(${fetch_column})
+        FROM ${table}
+        WHERE 1=1 
+        AND shareType = 1 OR shareType = 2
+        GROUP BY ${column}
+    `
+    await clickhouse.query(req).toPromise();
+}
+
 const prepare_companies_data = async () => {
-    await clickhouse.query(`DROP TABLE ${table}`).toPromise();
+    clickhouse.sessionId = uuidv4();
+
+    await clickhouse.query(`DROP TABLE IF EXISTS ${table} ;`).toPromise();
+
+    clickhouse.sessionId = uuidv4();
+
+    //console.log(create_companies_table)
 
     await clickhouse.query(create_companies_table).toPromise();
 
@@ -43,16 +69,38 @@ const prepare_companies_data = async () => {
             name: s.name,
             exchange: s.exchange,
             countryOfRisk: s.countryOfRisk,
-            sector: s.sector
+            sector: s.sector,
+            tradingStatus: s.tradingStatus,
+            buyAvailableFlag: s.buyAvailableFlag,
+            sellAvailableFlag: s.sellAvailableFlag,
+            shareType: s.shareType
         })
     });
 
-    clickhouse.sessionId = '1fasfsa532532fsa2';
+    clickhouse.sessionId = uuidv4();
     
     await clickhouse.insert(
-        `INSERT INTO ${table} (figi,ticker,classCode,isin,lot,currency,shortEnabledFlag,name,exchange,countryOfRisk,sector) `,
+        `INSERT INTO ${table} (
+            figi,
+            ticker,
+            classCode,
+            isin,
+            lot,
+            currency,
+            shortEnabledFlag,
+            name,
+            exchange,
+            countryOfRisk,
+            sector,
+            tradingStatus,
+            buyAvailableFlag,
+            sellAvailableFlag,
+            shareType
+        ) `.replace(/\n|\r/g, ""),
         rows
     ).toPromise();
+    // await fetch_companies_group_by('figi', 'sector');   
+    await fetch_companies_group_by('ticker', 'sector');
 }
 
 prepare_companies_data();
