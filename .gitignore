@@ -104,3 +104,4 @@ dist
 .tern-port
 /RU_shares.json
 /package-lock.json
+/.idea/
