@@ -19,6 +19,7 @@ const create_companies_table = `
         countryOfRisk LowCardinality(String),
         sector LowCardinality(String),
         tradingStatus UInt8,
+        otcFlag Bool,
         buyAvailableFlag Bool,
         sellAvailableFlag Bool,
         shareType UInt8
@@ -71,6 +72,7 @@ const prepare_companies_data = async () => {
             countryOfRisk: s.countryOfRisk,
             sector: s.sector,
             tradingStatus: s.tradingStatus,
+            otcFlag: s.otcFlag,
             buyAvailableFlag: s.buyAvailableFlag,
             sellAvailableFlag: s.sellAvailableFlag,
             shareType: s.shareType
@@ -93,6 +95,7 @@ const prepare_companies_data = async () => {
             countryOfRisk,
             sector,
             tradingStatus,
+            otcFlag,
             buyAvailableFlag,
             sellAvailableFlag,
             shareType
